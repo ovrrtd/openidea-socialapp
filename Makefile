@@ -9,7 +9,7 @@ runServerMac:
 
 .PHONY: migrateUp
 migrateUp:
-	migrate -database "postgres://root:root@localhost:5432/socialapp?sslmode=disable"  -path db/migrations up
+	migrate -database "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?$(DB_PARAMS)"  -path db/migrations up
 
 # to run migration file
 .PHONY: migrateUpProd

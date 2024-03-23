@@ -30,6 +30,10 @@ func (r *Restapi) MakeRoute(e *echo.Echo) {
 	NewRoute(e, http.MethodPost, "/v1/user/login", r.Login)
 	// image
 	NewRoute(e, http.MethodPost, "/v1/image", r.UploadImage, r.middleware.Authentication(true))
+	// post
+	NewRoute(e, http.MethodPost, "/v1/post", r.CreatePost, r.middleware.Authentication(true))
+	NewRoute(e, http.MethodGet, "/v1/post", r.FindAll, r.middleware.Authentication(true))
+	NewRoute(e, http.MethodPost, "/v1/post/comment", r.CreateComment, r.middleware.Authentication(true))
 
 }
 

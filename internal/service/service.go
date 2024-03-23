@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"mime/multipart"
+	"socialapp/internal/helper/common"
 	"socialapp/internal/model/request"
 	"socialapp/internal/model/response"
 	"socialapp/internal/repository"
@@ -20,6 +21,10 @@ type Service interface {
 	LinkPhone(ctx context.Context, payload request.LinkPhone) (*response.User, int, error)
 	// s3
 	UploadImage(ctx context.Context, file *multipart.FileHeader) (string, int, error)
+	// Post
+	CreatePost(ctx context.Context, payload request.CreatePost) (int, error)
+	CreateComment(ctx context.Context, payload request.CreateComment) (int, error)
+	FindAllPost(ctx context.Context, filter request.FindAllPost) ([]response.GetPosts, *common.Meta, int, error)
 }
 
 type Config struct {
@@ -32,13 +37,15 @@ type service struct {
 	log      zerolog.Logger
 	userRepo repository.UserRepository
 	s3Repo   repository.S3Repository
+	postRepo repository.PostRepository
 }
 
-func New(cfg Config, logger zerolog.Logger, userRepo repository.UserRepository, s3Repo repository.S3Repository) Service {
+func New(cfg Config, logger zerolog.Logger, userRepo repository.UserRepository, s3Repo repository.S3Repository, postRepo repository.PostRepository) Service {
 	return &service{
 		cfg:      cfg,
 		log:      logger,
 		userRepo: userRepo,
 		s3Repo:   s3Repo,
+		postRepo: postRepo,
 	}
 }

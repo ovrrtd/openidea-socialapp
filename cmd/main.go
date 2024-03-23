@@ -40,6 +40,8 @@ func main() {
 	// repository init
 	userRepo := repository.NewUserRepository(logger, db)
 	s3Repo := repository.NewS3Repository(logger)
+	postRepo := repository.NewPostRepository(logger, db)
+
 	salt, err := strconv.Atoi(os.Getenv("BCRYPT_SALT"))
 	if err != nil {
 		salt = 8
@@ -47,7 +49,7 @@ func main() {
 	// service registry
 	service := service.New(
 		service.Config{Salt: salt, JwtSecret: os.Getenv("JWT_SECRET")},
-		logger, userRepo, s3Repo)
+		logger, userRepo, s3Repo, postRepo)
 
 	// middleware init
 	md := mw.New(logger, service)
