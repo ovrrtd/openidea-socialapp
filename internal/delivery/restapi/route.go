@@ -24,8 +24,8 @@ func (r *Restapi) MakeRoute(e *echo.Echo) {
 
 	// user
 	NewRoute(e, http.MethodPatch, "/v1/user", r.UpdateAccount, r.middleware.Authentication(true))
+	NewRoute(e, http.MethodPost, "/v1/user/link", r.LinkEmail, r.middleware.Authentication(true))
 	NewRoute(e, http.MethodPost, "/v1/user/link/phone", r.LinkPhone, r.middleware.Authentication(true))
-	NewRoute(e, http.MethodPost, "/v1/user/link/email", r.LinkEmail, r.middleware.Authentication(true))
 	NewRoute(e, http.MethodPost, "/v1/user/register", r.Register)
 	NewRoute(e, http.MethodPost, "/v1/user/login", r.Login)
 	// friendship

@@ -24,7 +24,7 @@ func newDBDefaultSql() (*sql.DB, error) {
 	db.SetConnMaxIdleTime(30 * time.Second)
 	db.SetConnMaxLifetime(60 * time.Second)
 	db.SetMaxIdleConns(10)
-	db.SetMaxOpenConns(100)
+	db.SetMaxOpenConns(300)
 
 	return db, nil
 }
