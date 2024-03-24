@@ -59,7 +59,7 @@ func (s *service) Register(ctx context.Context, payload request.Register) (*resp
 			return nil, http.StatusBadRequest, errors.Wrap(errorer.ErrInvalidPhone, errorer.ErrInvalidPhone.Error())
 		}
 
-		if common.ValidatePhoneNumber(payload.CredentialValue) {
+		if !common.ValidatePhoneNumber(payload.CredentialValue) {
 			return nil, http.StatusBadRequest, errors.Wrap(errorer.ErrInvalidPhone, errorer.ErrInvalidPhone.Error())
 		}
 
@@ -69,7 +69,7 @@ func (s *service) Register(ctx context.Context, payload request.Register) (*resp
 			return nil, code, err
 		}
 		if exist != nil {
-			return nil, http.StatusConflict, errors.Wrap(errorer.ErrEmailExist, errorer.ErrEmailExist.Error())
+			return nil, http.StatusConflict, errors.Wrap(errorer.ErrPhoneExist, errorer.ErrPhoneExist.Error())
 		}
 		ent.Phone = payload.CredentialValue
 	}
@@ -143,7 +143,7 @@ func (s *service) Login(ctx context.Context, payload request.Login) (*response.L
 			return nil, http.StatusBadRequest, errors.Wrap(errorer.ErrInvalidPhone, errorer.ErrInvalidPhone.Error())
 		}
 
-		if common.ValidatePhoneNumber(payload.CredentialValue) {
+		if !common.ValidatePhoneNumber(payload.CredentialValue) {
 			return nil, http.StatusBadRequest, errors.Wrap(errorer.ErrInvalidPhone, errorer.ErrInvalidPhone.Error())
 		}
 
@@ -203,6 +203,10 @@ func (s *service) UpdateAccount(ctx context.Context, payload request.UpdateAccou
 	err := validator.ValidateStruct(&payload)
 	if err != nil {
 		return nil, http.StatusBadRequest, errors.Wrap(errorer.ErrInputRequest(err), errorer.ErrInputRequest(err).Error())
+	}
+
+	if !common.ValidateUrl(payload.ImageUrl) {
+		return nil, http.StatusBadRequest, errors.Wrap(errorer.ErrInvalidImageUrl, errorer.ErrInvalidImageUrl.Error())
 	}
 
 	ent, code, err := s.userRepo.FindByID(ctx, payload.ID)

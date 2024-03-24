@@ -18,7 +18,5 @@ func (r *Restapi) UploadImage(c echo.Context) error {
 	if err != nil {
 		return httpHelper.ResponseJSONHTTP(c, code, "", nil, nil, err)
 	}
-	return c.JSON(code, map[string]interface{}{
-		"imageUrl": imgUrl,
-	})
+	return httpHelper.ResponseJSONHTTP(c, code, "File uploaded sucessfully", map[string]string{"imageUrl": imgUrl}, nil, err)
 }

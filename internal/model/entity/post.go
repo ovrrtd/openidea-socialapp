@@ -26,4 +26,5 @@ type FindAllPostRequest struct {
 	Offset int
 	Search string
 	Tags   []string
+	UserID int64
 }

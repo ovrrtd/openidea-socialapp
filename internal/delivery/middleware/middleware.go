@@ -43,6 +43,9 @@ func (m *middleware) Authentication(isThrowError bool) func(next echo.HandlerFun
 				claims := &common.UserClaims{}
 				err := jwt.VerifyJwt(token, claims, os.Getenv("JWT_SECRET"))
 				if err != nil {
+					if err == errorer.ErrUnauthorized {
+						return httpHelper.ResponseJSONHTTP(c, http.StatusUnauthorized, "", nil, nil, errorer.ErrUnauthorized)
+					}
 					return httpHelper.ResponseJSONHTTP(c, http.StatusForbidden, "", nil, nil, errorer.ErrForbidden)
 				}
 

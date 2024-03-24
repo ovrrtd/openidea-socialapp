@@ -243,7 +243,6 @@ func ValidatePhoneNumber(phoneNumber string) bool {
 
 	// Construct the regular expression pattern
 	pattern := fmt.Sprintf(`^\+(%s)\d+$`, "("+strJoin(callingCodes, "|")+")")
-
 	// Compile the regular expression
 	regExp := regexp.MustCompile(pattern)
 

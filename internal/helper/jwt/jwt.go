@@ -21,11 +21,7 @@ func VerifyJwt(tokenString string, claims jwt.Claims, secret string) error {
 		return []byte(secret), nil
 	})
 	if err != nil {
-		if err == jwt.ErrSignatureInvalid {
-			return errorer.ErrUnauthorized
-		}
 		return err
-
 	}
 	if !tkn.Valid {
 		return errorer.ErrUnauthorized

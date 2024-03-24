@@ -16,7 +16,7 @@ type Login struct {
 type UpdateAccount struct {
 	ID       int64  `validate:"required"`
 	Name     string `json:"name" validate:"required,min=5,max=50"`
-	ImageUrl string `json:"imageUrl" validate:"required"`
+	ImageUrl string `json:"imageUrl" validate:"required,url"`
 }
 
 type LinkPhone struct {

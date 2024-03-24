@@ -39,7 +39,7 @@ func (r *PostRepositoryImpl) FindAll(ctx context.Context, filter entity.FindAllP
 	var args []interface{}
 	// Add conditions based on filter criteria
 	argIndex := 1 // Start index for placeholder arguments
-
+	fmt.Println("filter.Tags ", filter.Tags)
 	if len(filter.Tags) > 0 {
 		tagConditions := make([]string, len(filter.Tags))
 		for i, tag := range filter.Tags {
@@ -57,9 +57,9 @@ func (r *PostRepositoryImpl) FindAll(ctx context.Context, filter entity.FindAllP
 	}
 
 	// Construct the WHERE clause
-	var whereClause string
+	var whereClause = "WHERE ((f.user_id = p.user_id OR f.added_by = p.user_id) OR p.user_id = " + fmt.Sprint(filter.UserID) + ") "
 	if len(conditions) > 0 {
-		whereClause = "WHERE " + strings.Join(conditions, " AND ")
+		whereClause += " AND " + strings.Join(conditions, " AND ")
 	}
 
 	// Construct the LIMIT and OFFSET clauses
@@ -70,7 +70,7 @@ func (r *PostRepositoryImpl) FindAll(ctx context.Context, filter entity.FindAllP
 
 	// Construct the final query for products
 	query := `SELECT 
-			p.id,
+			distinct(p.id),
 			p.content_html,
 			p.tags,
 			p.user_id,
@@ -83,10 +83,12 @@ func (r *PostRepositoryImpl) FindAll(ctx context.Context, filter entity.FindAllP
 			u.created_at as u_created_at
 	FROM posts p
 	LEFT JOIN users u ON p.user_id = u.id 
+	LEFT JOIN friendships f ON p.user_id = f.user_id OR p.user_id = f.added_by
 	 ` + whereClause + ` ORDER BY 
     p.created_at DESC ` + limitOffsetClause
 	// Construct the query to get total product count
-	countQuery := "SELECT COUNT(*) FROM posts p " + whereClause
+	fmt.Println("query ", query, args)
+	countQuery := "SELECT COUNT(distinct(p.id)) FROM posts p LEFT JOIN users u ON p.user_id = u.id LEFT JOIN friendships f ON p.user_id = f.user_id OR p.user_id = f.added_by " + whereClause
 	posts := []entity.Post{}
 	// Execute the main query
 	argsQuery := []interface{}{}
@@ -173,6 +175,7 @@ func (r *PostRepositoryImpl) FindAll(ctx context.Context, filter entity.FindAllP
 			}
 
 			comment.Creator = user
+			r.logger.Debug().Msgf("user: %+v", user)
 			if hashPostID[comment.PostID] == nil {
 				hashPostID[comment.PostID] = []entity.Comment{}
 			}
@@ -225,8 +228,33 @@ func (r *PostRepositoryImpl) CreateComment(ctx context.Context, ent entity.Comme
 	ent.CreatedAt = time.Now().UnixMilli()
 	ent.UpdatedAt = time.Now().UnixMilli()
 
-	// insert comment
+	var tgtUserId int64
+	// get post by id
 	err := r.db.QueryRowContext(
+		ctx,
+		"SELECT user_id FROM posts WHERE id = $1",
+		&ent.PostID,
+	).Scan(&tgtUserId)
+
+	if err != nil {
+		return http.StatusInternalServerError, errors.Wrap(errorer.ErrInternalDatabase, err.Error())
+	}
+
+	if tgtUserId != ent.UserID {
+		// check if user is friend
+		var id int64
+		_ = r.db.QueryRowContext(
+			ctx,
+			"SELECT id FROM friendships WHERE (user_id = $1 AND added_by = $2) OR (user_id = $2 AND added_by = $1)",
+			&ent.UserID, &tgtUserId,
+		).Scan(&id)
+
+		if id == 0 {
+			return http.StatusBadRequest, errors.Wrap(errorer.ErrBadRequest, "user is not friend")
+		}
+	}
+	// insert comment
+	err = r.db.QueryRowContext(
 		ctx,
 		`
 		INSERT INTO comments (content, created_at, updated_at, post_id, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING id

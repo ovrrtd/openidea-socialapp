@@ -20,6 +20,11 @@ func (s *service) CreatePost(ctx context.Context, payload request.CreatePost) (i
 	if err != nil {
 		return http.StatusBadRequest, errors.Wrap(errorer.ErrInputRequest(err), errorer.ErrInputRequest(err).Error())
 	}
+	for _, tag := range payload.Tags {
+		if tag == "" {
+			return http.StatusBadRequest, errors.Wrap(errorer.ErrBadRequest, errorer.ErrBadRequest.Error())
+		}
+	}
 
 	// insert post
 	return s.postRepo.CreatePost(ctx, entity.Post{
@@ -35,6 +40,7 @@ func (s *service) FindAllPost(ctx context.Context, payload request.FindAllPost) 
 		Offset: payload.Offset,
 		Tags:   payload.Tags,
 		Search: payload.Search,
+		UserID: payload.UserID,
 	})
 
 	if err != nil {
@@ -98,7 +104,7 @@ func (s *service) FindAllPost(ctx context.Context, payload request.FindAllPost) 
 					ImageURL    string "json:\"imageUrl\""
 					FriendCount int    "json:\"friendCount\""
 				}{
-					UserID:      strconv.Itoa(int(c.UserID)),
+					UserID:      strconv.Itoa(int(c.Creator.ID)),
 					Name:        c.Creator.Name,
 					ImageURL:    c.Creator.ImageUrl,
 					FriendCount: int(c.Creator.FriendCount),

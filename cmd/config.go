@@ -5,7 +5,7 @@ import "os"
 var (
 
 	// APP ENV VARS
-	APP_PORT = "8000"
+	APP_PORT = "8080"
 	// DB ENV VARS
 	DB_HOST     = os.Getenv("DB_HOST")
 	DB_USERNAME = os.Getenv("DB_USERNAME")

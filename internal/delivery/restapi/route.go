@@ -28,6 +28,10 @@ func (r *Restapi) MakeRoute(e *echo.Echo) {
 	NewRoute(e, http.MethodPost, "/v1/user/link/email", r.LinkEmail, r.middleware.Authentication(true))
 	NewRoute(e, http.MethodPost, "/v1/user/register", r.Register)
 	NewRoute(e, http.MethodPost, "/v1/user/login", r.Login)
+	// friendship
+	NewRoute(e, http.MethodGet, "/v1/friend", r.FindAllFriend, r.middleware.Authentication(true))
+	NewRoute(e, http.MethodPost, "/v1/friend", r.CreateFriendship, r.middleware.Authentication(true))
+	NewRoute(e, http.MethodDelete, "/v1/friend", r.DeleteFriendship, r.middleware.Authentication(true))
 	// image
 	NewRoute(e, http.MethodPost, "/v1/image", r.UploadImage, r.middleware.Authentication(true))
 	// post

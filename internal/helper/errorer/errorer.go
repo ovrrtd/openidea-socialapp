@@ -18,6 +18,7 @@ var (
 	ErrForbidden        = errors.New("forbidden")
 	ErrInvalidEmail     = errors.New("invalid email")
 	ErrInvalidPhone     = errors.New("invalid phone number")
+	ErrInvalidImageUrl  = errors.New("invalid image url")
 )
 
 func ErrInputRequest(err error) error {
