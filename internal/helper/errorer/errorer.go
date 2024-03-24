@@ -19,6 +19,7 @@ var (
 	ErrInvalidEmail     = errors.New("invalid email")
 	ErrInvalidPhone     = errors.New("invalid phone number")
 	ErrInvalidImageUrl  = errors.New("invalid image url")
+	ErrAlreadyFriend    = errors.New("already friend")
 )
 
 func ErrInputRequest(err error) error {

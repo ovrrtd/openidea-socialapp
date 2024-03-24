@@ -16,3 +16,19 @@ migrateUp:
 migrateDown:
 	migrate -database "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?$(DB_PARAMS)"  -path db/migrations down
 	
+
+.PHONY: buildProd
+buildProd:
+	cd cmd && GOOS=linux GOARCH=amd64 go build -o main_nu
+
+.PHONY: scpProd
+scpProd:
+	 scp -i ./Project-Sprint-Key.pem ./cmd/main_nu_diaz ubuntu@54.255.241.225:~/
+
+.PHONY: migrateUpProd
+migrateUpProd:
+	migrate -path ./db/migrations -database "postgres://postgres:quiuxi9paeGh2EiS2Kiesh9euh2Ing4je@projectsprint-db.cavsdeuj9ixh.ap-southeast-1.rds.amazonaws.com:5432/postgres?sslmode=verify-full&sslrootcert=ap-southeast-1-bundle.pem" up
+
+.PHONY: migrateDownProd
+migrateDownProd:
+	migrate -path ./db/migrations -database "postgres://postgres:quiuxi9paeGh2EiS2Kiesh9euh2Ing4je@projectsprint-db.cavsdeuj9ixh.ap-southeast-1.rds.amazonaws.com:5432/postgres?sslmode=verify-full&sslrootcert=ap-southeast-1-bundle.pem" drop

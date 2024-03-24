@@ -7,12 +7,12 @@ import (
 )
 
 func newDBDefaultSql() (*sql.DB, error) {
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s TimeZone=UTC %s",
-		DB_HOST,
+	dsn := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?%s",
 		DB_USERNAME,
 		DB_PASSWORD,
-		DB_NAME,
+		DB_HOST,
 		DB_PORT,
+		DB_NAME,
 		DB_PARAMS,
 	)
 
@@ -24,7 +24,7 @@ func newDBDefaultSql() (*sql.DB, error) {
 	db.SetConnMaxIdleTime(30 * time.Second)
 	db.SetConnMaxLifetime(60 * time.Second)
 	db.SetMaxIdleConns(10)
-	db.SetMaxOpenConns(300)
+	db.SetMaxOpenConns(100)
 
 	return db, nil
 }

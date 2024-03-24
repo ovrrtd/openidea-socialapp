@@ -21,4 +21,7 @@
 go.work
 
 cmd/main
+cmd/main_nu
 .env
+
+*.pem
