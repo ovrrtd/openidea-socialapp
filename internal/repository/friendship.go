@@ -178,15 +178,10 @@ func (r *FriendshipRepositoryImpl) FindAll(ctx context.Context, filter entity.Fi
 		LEFT JOIN friendships f ON u.id = f.user_id OR u.id = f.added_by
 		` + whereClause + " " + orderByClause + " " + limitOffsetClause
 
-	queryCount := `SELECT COUNT(distinct(u.id)) FROM users u LEFT JOIN friendships f ON u.id = f.user_id OR u.id = f.added_by ` + whereClause
-
 	argsQuery := []interface{}{}
 	argsQuery = append(argsQuery, args...)
 	argsQuery = append(argsQuery, filter.Limit)
 	argsQuery = append(argsQuery, filter.Offset)
-	r.logger.Debug().Msgf("query: %s args: %+v", query, argsQuery)
-	r.logger.Debug().Msgf("query: %s args: %+v", queryCount, argsQuery)
-
 	// Execute the query
 	rows, err := r.db.QueryContext(ctx, query, argsQuery...)
 
@@ -207,18 +202,11 @@ func (r *FriendshipRepositoryImpl) FindAll(ctx context.Context, filter entity.Fi
 		users = append(users, user)
 	}
 
-	// Get total count
-	var totalCount int
-	err = r.db.QueryRowContext(ctx, queryCount, args...).Scan(&totalCount)
-
-	if err != nil {
-		return nil, nil, 0, errors.Wrap(errorer.ErrInternalDatabase, err.Error())
-	}
-
 	meta := common.Meta{
-		Total:  totalCount,
+		Total:  len(users),
 		Limit:  filter.Limit,
 		Offset: filter.Offset,
 	}
+
 	return users, &meta, http.StatusOK, nil
 }

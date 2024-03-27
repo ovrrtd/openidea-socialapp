@@ -35,6 +35,27 @@ type PostRepositoryImpl struct {
 }
 
 func (r *PostRepositoryImpl) FindAll(ctx context.Context, filter entity.FindAllPostRequest) ([]entity.Post, *common.Meta, int, error) {
+	type PostRaw struct {
+		ID                   int64
+		ContentHTML          string
+		Tags                 string
+		UserID               int64
+		CreatedAt            int64
+		UpdatedAt            int64
+		UserIDPost           int
+		UserName             string
+		UserImageURL         string
+		UserFriendCnt        int64
+		UserCreatedAt        int64
+		CommentID            *int64
+		CommentContent       *string
+		CommentPostID        *int64
+		CommentCreatedAt     *int64
+		CommentUserID        *int64
+		CommentUserName      *string
+		CommentUserImageURL  *string
+		CommentUserFriendCnt *int64
+	}
 	var conditions []string
 	var args []interface{}
 	// Add conditions based on filter criteria
@@ -57,9 +78,9 @@ func (r *PostRepositoryImpl) FindAll(ctx context.Context, filter entity.FindAllP
 	}
 
 	// Construct the WHERE clause
-	var whereClause = "WHERE ((f.user_id = p.user_id OR f.added_by = p.user_id) OR p.user_id = " + fmt.Sprint(filter.UserID) + ") "
+	var whereClause string
 	if len(conditions) > 0 {
-		whereClause += " AND " + strings.Join(conditions, " AND ")
+		whereClause += "WHERE " + strings.Join(conditions, " AND ")
 	}
 
 	// Construct the LIMIT and OFFSET clauses
@@ -70,7 +91,7 @@ func (r *PostRepositoryImpl) FindAll(ctx context.Context, filter entity.FindAllP
 
 	// Construct the final query for products
 	query := `SELECT 
-			distinct(p.id),
+			p.id,
 			p.content_html,
 			p.tags,
 			p.user_id,
@@ -80,14 +101,22 @@ func (r *PostRepositoryImpl) FindAll(ctx context.Context, filter entity.FindAllP
 			u.name as u_name,
 			u.image_url as u_image_url,
 			u.friend_count as u_friend_count,
-			u.created_at as u_created_at
+			u.created_at as u_created_at,
+			c.id,
+			c.content,
+			c.post_id,
+			c.created_at,
+			cu.id as u_id,
+			cu.name as u_name,
+			cu.image_url as u_image_url,
+			cu.friend_count as u_friend_count
 	FROM posts p
 	LEFT JOIN users u ON p.user_id = u.id 
-	LEFT JOIN friendships f ON p.user_id = f.user_id OR p.user_id = f.added_by
+	LEFT JOIN comments c ON p.id = c.post_id
+	LEFT JOIN users cu ON c.user_id = cu.id
 	 ` + whereClause + ` ORDER BY 
     p.created_at DESC ` + limitOffsetClause
 	// Construct the query to get total product count
-	countQuery := "SELECT COUNT(distinct(p.id)) FROM posts p LEFT JOIN users u ON p.user_id = u.id LEFT JOIN friendships f ON p.user_id = f.user_id OR p.user_id = f.added_by " + whereClause
 	posts := []entity.Post{}
 	// Execute the main query
 	argsQuery := []interface{}{}
@@ -99,103 +128,77 @@ func (r *PostRepositoryImpl) FindAll(ctx context.Context, filter entity.FindAllP
 		return nil, nil, http.StatusInternalServerError, errors.Wrap(err, "failed to execute query")
 	}
 	defer rows.Close()
-	postIds := []int64{}
+	postIDs := make(map[int64]int)
 	for rows.Next() {
-		post := entity.Post{}
-		user := entity.User{}
+		postRaw := PostRaw{}
 
 		// var commentString []string
 		// Add more variables as needed for other columns
 		err := rows.Scan(
-			&post.ID,
-			&post.ContentHtml,
-			&post.Tags,
-			&post.UserID,
-			&post.CreatedAt,
-			&post.UpdatedAt,
-			&user.ID,
-			&user.Name,
-			&user.ImageUrl,
-			&user.FriendCount,
-			&user.CreatedAt,
+			&postRaw.ID,
+			&postRaw.ContentHTML,
+			&postRaw.Tags,
+			&postRaw.UserID,
+			&postRaw.CreatedAt,
+			&postRaw.UpdatedAt,
+			&postRaw.UserID,
+			&postRaw.UserName,
+			&postRaw.UserImageURL,
+			&postRaw.UserFriendCnt,
+			&postRaw.UserCreatedAt,
+			&postRaw.CommentID,
+			&postRaw.CommentContent,
+			&postRaw.CommentPostID,
+			&postRaw.CommentCreatedAt,
+			&postRaw.CommentUserID,
+			&postRaw.CommentUserName,
+			&postRaw.CommentUserImageURL,
+			&postRaw.CommentUserFriendCnt,
 		)
 		if err != nil {
 			return nil, nil, http.StatusInternalServerError, errors.Wrap(err, "failed to scan product")
 		}
-		postIds = append(postIds, post.ID)
-		post.Creator = user
-		posts = append(posts, post)
-	}
 
-	// query comment by post ids
-	if len(postIds) != 0 {
-		query = `
-		SELECT
-			c.content,
-			c.post_id,
-			c.created_at,
-			u.id as u_id,
-			u.name as u_name,
-			u.image_url as u_image_url,
-			u.friend_count as u_friend_count
-		FROM comments c
-		LEFT JOIN users u ON c.user_id = u.id
-		WHERE c.post_id IN (%s)
-		ORDER BY c.created_at DESC
-	`
-		idsStr := ""
-		for i, id := range postIds {
-			idsStr += fmt.Sprintf("%d", id)
-			if i != len(postIds)-1 {
-				idsStr += ", "
+		if postIDs[postRaw.ID] == 0 {
+			post := entity.Post{
+				ID:          postRaw.ID,
+				ContentHtml: postRaw.ContentHTML,
+				Tags:        postRaw.Tags,
+				UserID:      postRaw.UserID,
+				CreatedAt:   postRaw.CreatedAt,
+				UpdatedAt:   postRaw.UpdatedAt,
+				Comments:    []entity.Comment{},
 			}
-		}
-		rows, err = r.db.QueryContext(ctx, fmt.Sprintf(query, idsStr))
-
-		if err != nil {
-			return nil, nil, http.StatusInternalServerError, errors.Wrap(err, "failed to execute query")
+			post.Creator = entity.User{
+				ID:          postRaw.UserID,
+				Name:        postRaw.UserName,
+				ImageUrl:    postRaw.UserImageURL,
+				FriendCount: postRaw.UserFriendCnt,
+				CreatedAt:   postRaw.UserCreatedAt,
+			}
+			posts = append(posts, post)
+			postIDs[postRaw.ID] = len(posts) - 1
 		}
 
-		hashPostID := make(map[int64][]entity.Comment)
-		for rows.Next() {
-			comment := entity.Comment{}
-			user := entity.User{}
-			err := rows.Scan(
-				&comment.Content,
-				&comment.PostID,
-				&comment.CreatedAt,
-				&user.ID,
-				&user.Name,
-				&user.ImageUrl,
-				&user.FriendCount,
-			)
-			if err != nil {
-				return nil, nil, http.StatusInternalServerError, errors.Wrap(err, "failed to scan product")
-			}
-
-			comment.Creator = user
-			r.logger.Debug().Msgf("user: %+v", user)
-			if hashPostID[comment.PostID] == nil {
-				hashPostID[comment.PostID] = []entity.Comment{}
-			}
-			hashPostID[comment.PostID] = append(hashPostID[comment.PostID], comment)
+		if postRaw.CommentID != nil {
+			posts[postIDs[postRaw.ID]].Comments = append(posts[postIDs[postRaw.ID]].Comments, entity.Comment{
+				ID:        *postRaw.CommentID,
+				Content:   *postRaw.CommentContent,
+				PostID:    *postRaw.CommentPostID,
+				CreatedAt: *postRaw.CommentCreatedAt,
+				Creator: entity.User{
+					ID:          *postRaw.CommentUserID,
+					Name:        *postRaw.CommentUserName,
+					ImageUrl:    *postRaw.CommentUserImageURL,
+					FriendCount: *postRaw.CommentUserFriendCnt,
+				},
+			})
 		}
-		for i, p := range posts {
-			if hashPostID[p.ID] != nil {
-				posts[i].Comments = hashPostID[p.ID]
-			}
-		}
-	}
 
-	// Execute the count query to get total product count
-	var totalCount int
-	err = r.db.QueryRowContext(ctx, countQuery, args...).Scan(&totalCount)
-	if err != nil {
-		return nil, nil, http.StatusInternalServerError, errors.Wrap(err, "failed to get total product count")
 	}
 
 	meta := common.Meta{
-		Total:  totalCount,
+		Total:  len(posts),
 		Limit:  filter.Limit,
 		Offset: filter.Offset,
 	}
