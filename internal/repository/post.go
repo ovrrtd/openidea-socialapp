@@ -87,7 +87,6 @@ func (r *PostRepositoryImpl) FindAll(ctx context.Context, filter entity.FindAllP
 	 ` + whereClause + ` ORDER BY 
     p.created_at DESC ` + limitOffsetClause
 	// Construct the query to get total product count
-	fmt.Println("query ", query, args)
 	countQuery := "SELECT COUNT(distinct(p.id)) FROM posts p LEFT JOIN users u ON p.user_id = u.id LEFT JOIN friendships f ON p.user_id = f.user_id OR p.user_id = f.added_by " + whereClause
 	posts := []entity.Post{}
 	// Execute the main query

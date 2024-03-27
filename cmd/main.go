@@ -22,7 +22,7 @@ import (
 func main() {
 	zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
 	logger := zerolog.New(os.Stdout)
-
+	logger.Debug().Msgf("Starting application... DB_HOST: %s", DB_HOST)
 	// db, err := newMongoDB(ConfigMongoDB{Host: cfg.DB.Host})
 	db, err := newDBDefaultSql()
 	if err != nil {

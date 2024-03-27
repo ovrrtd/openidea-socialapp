@@ -1,7 +1,7 @@
 # to run server
 .PHONY: runServerLinux
 runServerLinux:
-	cd cmd && GOOS=linux GOARCH=amd64 go build -o main
+	cd cmd && GOOS=linux GOARCH=amd64 go build -o main && ./main
 
 .PHONY: runServerMac
 runServerMac:
@@ -23,7 +23,7 @@ buildProd:
 
 .PHONY: scpProd
 scpProd:
-	 scp -i ./Project-Sprint-Key.pem ./cmd/main_nu_diaz ubuntu@54.255.241.225:~/
+	 scp -i ./Project-Sprint-Key.pem ./cmd/main ubuntu@54.255.241.225:~/
 
 .PHONY: migrateUpProd
 migrateUpProd:

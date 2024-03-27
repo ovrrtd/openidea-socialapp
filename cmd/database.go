@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"time"
 )
 
 func newDBDefaultSql() (*sql.DB, error) {
@@ -20,11 +19,6 @@ func newDBDefaultSql() (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	db.SetConnMaxIdleTime(30 * time.Second)
-	db.SetConnMaxLifetime(60 * time.Second)
-	db.SetMaxIdleConns(10)
-	db.SetMaxOpenConns(100)
 
 	return db, nil
 }

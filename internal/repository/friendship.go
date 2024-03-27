@@ -41,17 +41,6 @@ func (r *FriendshipRepositoryImpl) CreateFriendship(ctx context.Context, userID 
 	defer tx.Rollback()
 
 	// check friendship
-	var id int64
-	err = tx.QueryRowContext(ctx, "SELECT id FROM friendships WHERE user_id = $1 AND added_by = $2", userID, addedBy).Scan(&id)
-
-	if err != nil && err != sql.ErrNoRows {
-		return http.StatusInternalServerError, errors.Wrap(errorer.ErrInternalDatabase, err.Error())
-	}
-
-	if id != 0 {
-		return http.StatusConflict, errors.Wrap(errorer.ErrAlreadyFriend, errorer.ErrAlreadyFriend.Error())
-	}
-
 	frd := entity.Friendship{
 		UserID:    userID,
 		AddedBy:   addedBy,
@@ -93,14 +82,7 @@ func (r *FriendshipRepositoryImpl) DeleteFriendship(ctx context.Context, friend1
 		return http.StatusInternalServerError, errors.Wrap(errorer.ErrInternalDatabase, err.Error())
 	}
 	defer tx.Rollback()
-	var id int64
-	err = tx.QueryRowContext(ctx, "SELECT id FROM friendships WHERE (user_id = $1 AND added_by = $2) OR (user_id = $2 AND added_by = $1)", friend1, friend2).Scan(&id)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return http.StatusNotFound, errors.Wrap(errorer.ErrNotFound, errorer.ErrNotFound.Error())
-		}
-		return http.StatusInternalServerError, errors.Wrap(errorer.ErrInternalDatabase, err.Error())
-	}
+
 	// Delete friendship
 	res, err := tx.ExecContext(ctx, "DELETE FROM friendships WHERE (user_id = $1 AND added_by = $2) OR (user_id = $2 AND added_by = $1)", friend1, friend2)
 
