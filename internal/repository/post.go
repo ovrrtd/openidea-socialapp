@@ -60,7 +60,6 @@ func (r *PostRepositoryImpl) FindAll(ctx context.Context, filter entity.FindAllP
 	var args []interface{}
 	// Add conditions based on filter criteria
 	argIndex := 1 // Start index for placeholder arguments
-	fmt.Println("filter.Tags ", filter.Tags)
 	if len(filter.Tags) > 0 {
 		tagConditions := make([]string, len(filter.Tags))
 		for i, tag := range filter.Tags {

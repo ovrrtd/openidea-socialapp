@@ -1,7 +1,6 @@
 package restapi
 
 import (
-	"fmt"
 	"net/http"
 	"socialapp/internal/helper/common"
 	httpHelper "socialapp/internal/helper/http"
@@ -44,7 +43,6 @@ func (r *Restapi) FindAllFriend(c echo.Context) error {
 	if urlValues.Has("limit") {
 		limit, err := strconv.Atoi(urlValues.Get("limit"))
 		if err != nil {
-			fmt.Print(err.Error())
 			return httpHelper.ResponseJSONHTTP(c, http.StatusBadRequest, "", nil, nil, nil)
 		}
 		request.Limit = limit
@@ -58,7 +56,6 @@ func (r *Restapi) FindAllFriend(c echo.Context) error {
 	if urlValues.Has("offset") {
 		offset, err := strconv.Atoi(urlValues.Get("offset"))
 		if err != nil {
-			fmt.Print(err.Error())
 			return httpHelper.ResponseJSONHTTP(c, http.StatusBadRequest, "", nil, nil, nil)
 		}
 		request.Offset = offset

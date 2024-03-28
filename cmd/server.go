@@ -1,9 +1,10 @@
-package main
+package cmd
 
 import (
 	"fmt"
 	"os"
 	"os/signal"
+	database "socialapp/db"
 	mw "socialapp/internal/delivery/middleware"
 	"socialapp/internal/delivery/restapi"
 	"socialapp/internal/repository"
@@ -15,25 +16,24 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/pkgerrors"
-
-	_ "github.com/lib/pq"
 )
 
-func main() {
+var (
+	APP_PORT = "8080"
+)
+
+func Server() error {
 	zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
 	logger := zerolog.New(os.Stdout)
-	logger.Debug().Msgf("Starting application... DB_HOST: %s", DB_HOST)
-	// db, err := newMongoDB(ConfigMongoDB{Host: cfg.DB.Host})
-	db, err := newDBDefaultSql()
+	db, err := database.NewDBDefaultSql()
 	if err != nil {
 		logger.Info().Msg(fmt.Sprintf("Postgres connection error: %s", err.Error()))
-		return
+		return err
 	}
-	logger.Info().Msg(fmt.Sprintf("Postgres connected: %s", DB_HOST))
 	err = db.Ping()
 	if err != nil {
 		logger.Info().Msg(fmt.Sprintf("Postgres ping error: %s", err.Error()))
-		return
+		return err
 	}
 	defer db.Close()
 
@@ -91,10 +91,10 @@ func main() {
 	}()
 
 	go func() {
-		c := make(chan os.Signal)
+		c := make(chan os.Signal, 1)
 		signal.Notify(c, syscall.SIGINT)
 		errs <- fmt.Errorf("%s", <-c)
 	}()
 
-	<-errs
+	return <-errs
 }
